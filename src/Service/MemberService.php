@@ -1,80 +1,131 @@
 <?php
 
-namespace Model;
+namespace Service;
 
-use JsonSerializable;
+use Error\APIException;
+use Model\Member;
+use Repository\ModelRepository;
+use Repository\TeamRepository;
 
-class Member implements JsonSerializable {
-    //implementando essa interface, a função json_enconde() terá acesso
-    //aos membros privados do objeto através do método jsonSerialize().
- 
-    private ?int $id;
-    private string $name;
-    private float $gold;
-    private int $role;
-    private int $team;
+class MemberService {
+    private MemberRepository $repository;
+    private TeamRepository $teamRepository;
 
-    //construtor
-    public function __construct(
+    function __construct() {
+        $this->repository = new MemberRepository();
+        $this->courseRepository = new CourseRepository();
+
+    }
+
+    function getMembers(?string $name): array {
+        if ($name)
+            return $this->repository->findByName($name);
+        else
+            return $this->repository->findAll();
+    }
+
+    function getMemberById(string $id): Member {
+        $member = $this->repository->findById($id);
+
+        if (!$member)
+            throw new APIException("Member not found!", 404);
+
+        return $member;
+    }
+
+    function createNewMember(
         string $name,
-        float $gold, 
-        int $role, 
-        int $team, 
-        ?int $id = null
-    ) {
-        $this->id = $id;
-        $this->name = trim($name);
-        $this->gold = $gold;
-        $this->role = $role;
-        $this->team = $team;
+        string $email,
+        int $courseId,
+        int $semester
+    ): Member {
+        $member = new Member(
+            name: $name,
+            email: $email,
+            courseId: $courseId,
+            semester: $semester
+        );
+
+        $this->validateMember($member);
+
+        return $this->repository->create($member);
+    }
+    function updateMember(
+        string $id,
+        string $name,
+        string $role,
+        int $gold,
+        int $team
+    ): Member {
+        $member = $this->getMemberById($id);
+
+        $member->setName($name);
+        $member->setRole($role);
+        $member->setGold($gold);
+        $member->setTeam($team);
+
+        $this->validateMember($member);
+        $this->repository->update($member);
+
+        return $member;
     }
 
-    public function getId(): int {
-        return $this->id;
+    function deleteMember(string $id)
+    {
+        //busca o estudante pelo Id para verificar se existe
+        $member = $this->getMemberById($id);
+
+        //Exclui o estudante no banco de dados
+        $this->repository->delete($id);
     }
 
-    public function getName(): string {
-        return $this->name;
+    function setMemberSemester(string $id, int $semester): Member
+    {
+        //busca o estudante pelo Id
+        $member = $this->getMemberById($id);
+
+        //atualiza o período do estudante
+        $member->setSemester($semester);
+
+        //valida se o estudante atualizado está de acordo com as regras
+        $this->validateMember($member);
+
+        //altera o período do estudante
+        $this->repository->setSemester($id, $semester);
+
+        //retorna o estudante atualizado
+        return $member;
     }
 
-    public function getGold(): int {
-        return $this->gold;
-    }
+    private function validateMember(Member $member)
+    {
+        //verifica se o nome do estudante tem pelo menos 5 caracters
+        if (strlen(trim($member->getName())) < 5)
+            throw new APIException("Invalid Member name!", 400);
 
-    public function getrole(): int {
-        return $this->role;
-    }
+        //verificar se o email é válido
+        if (!filter_var($member->getEmail(), FILTER_VALIDATE_EMAIL))
+            throw new APIException("Invalid email!", 400);
 
-    public function getTeam(): int {
-        return $this->team;
-    }
+        //verifica se exites um estudante com o mesmo email
+        $memberWithSameEmail = $this->repository->findByEmail($member->getEmail());
+        if ($memberWithSameEmail) {
+            //como pode ser um update, verificar se o email encontrado não é do próprio estudante
+            if ($memberWithSameEmail->getId() !== $member->getId())
+                throw new APIException("This email is already in use!", 409);
+        }
 
-    public function setId(int $id) { 
-        //repare que id só admite nulo no processo de criação, aqui não!
-        $this->id = $id;
-    }
+        //verifica se o Id do curso refere-se a um curso existente
+        $course = $this->courseRepository->findById($Member->getCourseId());
+        if (!$course)
+            throw new APIException("Course not found!", 404);
 
-    public function setName(string $name) {
-        $this->name = trim($name);
-    }
+        //verifica se o período do estudante é maior ou igual a zero
+        if ($Member->getSemester() <= 0)
+            throw new APIException("Semester must be greater than zero!", 400);
 
-    public function setGold(int $gold) {
-        $this->gold = $gold;
-    }
-
-    public function setrole(int $role) {
-        $this->role = $role;
-    }
-
-    public function setTeam(int $role) {
-        $this->role = $role;
-    }
-
-    //a interface JsonSerializable exige a implementação desse método
-    //basicamene ele retorna todas (mas poderáimos customizar) os atributos do curso,
-    //agora com acesso público, de forma que a função json_encode() possa acessá-los
-    public function jsonSerialize(): array {
-        $vars = get_object_vars($this);
-        return $vars;
+        //verifica se o período do estudante não é maior do que o número de períodos do curso
+        if ($Member->getSemester() > $course->getSemesters())
+            throw new APIException("Semester is greater than course semesters!", 400);
     }
 }

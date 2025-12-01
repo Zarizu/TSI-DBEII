@@ -1,73 +1,100 @@
 <?php
 
-namespace Model;
+namespace Repository;
 
-use JsonSerializable;
+use Database\Database;
+use Model\Member;
+use PDO;
 
-class Mission implements JsonSerializable {
-    //implementando essa interface, a função json_enconde() terá acesso
-    //aos membros privados do objeto através do método jsonSerialize().
- 
-    private ?int $id;
-    private string $name;
-    private string $description;
-    private float $reward;
+class MemberRepository {
+    private $connection;
 
-    //construtor
-    public function __construct(
-        string $name,
-        float $reward, 
-        int $description,
-        ?int $id = null
-    ) {
-        $this->id = $id;
-        $this->name = trim($name);
-        $this->reward = $reward;
-        $this->description = $description;
+    public function __construct() {
+        $this->connection = Database::getConnection();
     }
 
-    public function getId(): int {
-        return $this->id;
+    public function findAll(): array {
+        $stmt = $this->connection->prepare("SELECT * FROM members");
+        $stmt->execute();
+
+        $members = [];
+        while ($row = $stmt->fetch()) {
+            $member = new Member(
+                id: $row['id'],
+                name: $row['name'],
+                role: $row['role'],
+                gold: $row['gold'],
+                team: $row['team'],
+            );
+            $members[] = $member;
+        }
+
+        return $members;
     }
 
-    public function getName(): string {
-        return $this->name;
+    public function findByName(string $name): array {
+        $stmt = $this->connection->prepare("SELECT * FROM courses WHERE name like :name");
+        $stmt->bindValue(':name', '%' . $name . '%');
+        $stmt->execute();
+
+        $members = [];
+        while ($row = $stmt->fetch()) {
+            $member = new Member(
+                id: $row['id'],
+                name: $row['name'],
+                role: $row['role'],
+                gold: $row['gold'],
+                team: $row['team'],
+            );
+            $members[] = $member;
+        }
+
+        return $members;
     }
 
-    public function getReward(): int {
-        return $this->reward;
+    public function findById(int $id): ?Member {
+        $stmt = $this->connection->prepare("SELECT * FROM members WHERE id = :id");
+        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $row = $stmt->fetch();
+        if (!$row) return null;
+
+        $member = new Member(
+            id: $row['id'],
+            name: $row['name'],
+            role: $row['role'],
+            gold: $row['gold'],
+            team: $row['team'],
+        );
+
+        return $member;
     }
 
-    public function getDescription(): int {
-        return $this->description;
+    public function create(Member $member): Member {
+        $stmt = $this->connection->prepare("INSERT INTO members (name, role, gold, team) VALUES (:name, :role, :gold, :team)");
+        $stmt->bindValue(':name', $member->getName());
+        $stmt->bindValue(':role', $member->getRole(), PDO::PARAM_INT);
+        $stmt->bindValue(':gold', $member->getGold(), PDO::PARAM_FLOAT);
+        $stmt->bindValue(':team', $member->getTeam(), PDO::PARAM_INT);
+        $stmt->execute();
+
+        $member->setId($this->connection->lastInsertId());
+
+        return $member;
     }
 
-    public function getTeam(): int {
-        return $this->team;
+    public function update(Member $member): void {
+        $stmt = $this->connection->prepare("UPDATE members SET name = :name, role = :role, gold = :gold, team = :team WHERE id = :id;");
+        $stmt->bindValue(':id', $member->getId(), PDO::PARAM_INT);
+        $stmt->bindValue(':name', $member->getName(), PDO::PARAM_STR);
+        $stmt->bindValue(':semesters', $member->getSemesters(), PDO::PARAM_INT);
+        $stmt->execute();
     }
 
-    public function setId(int $id) { 
-        //repare que id só admite nulo no processo de criação, aqui não!
-        $this->id = $id;
-    }
-
-    public function setName(string $name) {
-        $this->name = trim($name);
-    }
-
-    public function setReward(int $reward) {
-        $this->reward = $reward;
-    }
-
-    public function setDescription(int $description) {
-        $this->description = $description;
-    }
-
-    //a interface JsonSerializable exige a implementação desse método
-    //basicamene ele retorna todas (mas poderáimos customizar) os atributos do curso,
-    //agora com acesso público, de forma que a função json_encode() possa acessá-los
-    public function jsonSerialize(): array {
-        $vars = get_object_vars($this);
-        return $vars;
+    public function delete(int $id): void {
+        $stmt = $this->connection->prepare("DELETE FROM member WHERE id = :id;");
+        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
     }
 }

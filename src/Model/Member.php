@@ -49,8 +49,7 @@ class Member implements JsonSerializable {
         return $this->team;
     }
 
-    public function setId(int $id) { 
-        //repare que id só admite nulo no processo de criação, aqui não!
+    public function setId(int $id) {
         $this->id = $id;
     }
 
