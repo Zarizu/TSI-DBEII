@@ -89,8 +89,8 @@ class MissionRepository {
     public function create(Mission $mission): Mission {
         $stmt = $this->connection->prepare("INSERT INTO missions (name, description, reward) VALUES (:name, :description, :reward)");
         $stmt->bindValue(':name', $mission->getName());
-        $stmt->bindValue(':description', $mission->getDescription(), PDO::PARAM_FLOAT);
-        $stmt->bindValue(':reward', $mission->getReward(), PDO::PARAM_INT);
+        $stmt->bindValue(':description', $mission->getDescription(), PDO::PARAM_STR);
+        $stmt->bindValue(':reward', $mission->getReward(), PDO::PARAM_FLOAT);
         $stmt->execute();
 
         $mission->setId($this->connection->lastInsertId());
@@ -102,8 +102,8 @@ class MissionRepository {
         $stmt = $this->connection->prepare("UPDATE missions SET name = :name, description = :description, reward = :reward WHERE id = :id;");
         $stmt->bindValue(':id', $mission->getId(), PDO::PARAM_INT);
         $stmt->bindValue(':name', $mission->getName());
-        $stmt->bindValue(':description', $mission->getDescription(), PDO::PARAM_FLOAT);
-        $stmt->bindValue(':reward', $mission->getReward(), PDO::PARAM_INT);
+        $stmt->bindValue(':description', $mission->getDescription(), PDO::PARAM_STR);
+        $stmt->bindValue(':reward', $mission->getReward(), PDO::PARAM_FLOAT);
         $stmt->execute();
     }
 

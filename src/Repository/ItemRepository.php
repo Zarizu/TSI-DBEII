@@ -91,7 +91,7 @@ class ItemRepository {
         $stmt = $this->connection->prepare("INSERT INTO items (name, amount, owner) VALUES (:name, :amount, :owner)");
         $stmt->bindValue(':name', $item->getName());
         $stmt->bindValue(':amount', $item->getAmount(), PDO::PARAM_INT);
-        $stmt->bindValue(':owner', $item->getOwner(), PDO::PARAM_FLOAT);
+        $stmt->bindValue(':owner', $item->getOwner(), PDO::PARAM_INT);
         $stmt->execute();
 
         $item->setId($this->connection->lastInsertId());
@@ -103,7 +103,8 @@ class ItemRepository {
         $stmt = $this->connection->prepare("UPDATE items SET name = :name, amount = :amount, owner = :owner WHERE id = :id;");
         $stmt->bindValue(':id', $item->getId(), PDO::PARAM_INT);
         $stmt->bindValue(':name', $item->getName(), PDO::PARAM_STR);
-        $stmt->bindValue(':semesters', $item->getSemesters(), PDO::PARAM_INT);
+        $stmt->bindValue(':amount', $item->getAmount(), PDO::PARAM_INT);
+        $stmt->bindValue(':owner', $item->getOwner(), PDO::PARAM_INT);
         $stmt->execute();
     }
 

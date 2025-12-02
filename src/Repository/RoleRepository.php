@@ -88,7 +88,9 @@ class MemberRepository {
         $stmt = $this->connection->prepare("UPDATE members SET name = :name, role = :role, gold = :gold, team = :team WHERE id = :id;");
         $stmt->bindValue(':id', $member->getId(), PDO::PARAM_INT);
         $stmt->bindValue(':name', $member->getName(), PDO::PARAM_STR);
-        $stmt->bindValue(':semesters', $member->getSemesters(), PDO::PARAM_INT);
+        $stmt->bindValue(':role', $member->getRole(), PDO::PARAM_INT);
+        $stmt->bindValue(':gold', $member->getGold(), PDO::PARAM_FLOAT);
+        $stmt->bindValue(':team', $member->getTeam(), PDO::PARAM_INT);
         $stmt->execute();
     }
 

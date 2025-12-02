@@ -137,7 +137,7 @@ class MemberRepository {
     public function updateGold(int $id, float $gold): void {
         $stmt = $this->connection->prepare("UPDATE members SET gold = :gold WHERE id = :id;");
         $stmt->bindValue(':id', $team->getId(), PDO::PARAM_INT);
-        $stmt->bindValue(':gold', $team->getGold(), PDO::PARAM_INT);
+        $stmt->bindValue(':gold', $team->getGold(), PDO::PARAM_FLOAT);
         $stmt->execute();
     }
 
