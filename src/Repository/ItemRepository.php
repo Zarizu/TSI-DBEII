@@ -3,10 +3,10 @@
 namespace Repository;
 
 use Database\Database;
-use Model\Member;
+use Model\Item;
 use PDO;
 
-class MemberRepository {
+class ItemRepository {
     private $connection;
 
     public function __construct() {
@@ -14,86 +14,101 @@ class MemberRepository {
     }
 
     public function findAll(): array {
-        $stmt = $this->connection->prepare("SELECT * FROM members");
+        $stmt = $this->connection->prepare("SELECT * FROM items");
         $stmt->execute();
 
-        $members = [];
+        $items = [];
         while ($row = $stmt->fetch()) {
-            $member = new Member(
+            $item = new Item(
                 id: $row['id'],
                 name: $row['name'],
-                role: $row['role'],
-                gold: $row['gold'],
-                team: $row['team'],
+                amount: $row['amount'],
+                owner: $row['owner'],
             );
-            $members[] = $member;
+            $items[] = $item;
         }
 
-        return $members;
+        return $items;
     }
 
     public function findByName(string $name): array {
-        $stmt = $this->connection->prepare("SELECT * FROM courses WHERE name like :name");
+        $stmt = $this->connection->prepare("SELECT * FROM items WHERE name like :name");
         $stmt->bindValue(':name', '%' . $name . '%');
         $stmt->execute();
 
-        $members = [];
+        $items = [];
         while ($row = $stmt->fetch()) {
-            $member = new Member(
+            $item = new Item(
                 id: $row['id'],
                 name: $row['name'],
-                role: $row['role'],
-                gold: $row['gold'],
-                team: $row['team'],
+                amount: $row['amount'],
+                owner: $row['owner'],
             );
-            $members[] = $member;
+            $items[] = $item;
         }
 
-        return $members;
+        return $items;
     }
 
-    public function findById(int $id): ?Member {
-        $stmt = $this->connection->prepare("SELECT * FROM members WHERE id = :id");
+    public function findByOwner(string $owner): array {
+        $stmt = $this->connection->prepare("SELECT * FROM items WHERE owner = :owner");
+        $stmt->bindValue(':owner', $owner);
+        $stmt->execute();
+
+        $items = [];
+        while ($row = $stmt->fetch()) {
+            $item = new Item(
+                id: $row['id'],
+                name: $row['name'],
+                amount: $row['amount'],
+                owner: $row['owner'],
+            );
+            $items[] = $item;
+        }
+
+        return $items;
+    }
+
+    public function findById(int $id): ?Item {
+        $stmt = $this->connection->prepare("SELECT * FROM items WHERE id = :id");
         $stmt->bindValue(':id', $id, PDO::PARAM_INT);
         $stmt->execute();
 
         $row = $stmt->fetch();
         if (!$row) return null;
 
-        $member = new Member(
+        $item = new Item(
             id: $row['id'],
             name: $row['name'],
-            role: $row['role'],
-            gold: $row['gold'],
-            team: $row['team'],
+            amount: $row['amount'],
+            owner: $row['owner'],
         );
 
-        return $member;
+        return $item;
     }
 
-    public function create(Member $member): Member {
-        $stmt = $this->connection->prepare("INSERT INTO members (name, role, gold, team) VALUES (:name, :role, :gold, :team)");
-        $stmt->bindValue(':name', $member->getName());
-        $stmt->bindValue(':role', $member->getRole(), PDO::PARAM_INT);
-        $stmt->bindValue(':gold', $member->getGold(), PDO::PARAM_FLOAT);
-        $stmt->bindValue(':team', $member->getTeam(), PDO::PARAM_INT);
+    public function create(Item $item): Item {
+        $stmt = $this->connection->prepare("INSERT INTO items (name, amount, owner) VALUES (:name, :amount, :owner)");
+        $stmt->bindValue(':name', $item->getName());
+        $stmt->bindValue(':amount', $item->getAmount(), PDO::PARAM_INT);
+        $stmt->bindValue(':owner', $item->getOwner(), PDO::PARAM_FLOAT);
         $stmt->execute();
 
-        $member->setId($this->connection->lastInsertId());
+        $item->setId($this->connection->lastInsertId());
 
-        return $member;
+        return $item;
     }
 
-    public function update(Member $member): void {
-        $stmt = $this->connection->prepare("UPDATE members SET name = :name, role = :role, gold = :gold, team = :team WHERE id = :id;");
-        $stmt->bindValue(':id', $member->getId(), PDO::PARAM_INT);
-        $stmt->bindValue(':name', $member->getName(), PDO::PARAM_STR);
-        $stmt->bindValue(':semesters', $member->getSemesters(), PDO::PARAM_INT);
+    public function update(Item $item): void {
+        $stmt = $this->connection->prepare("UPDATE items SET name = :name, amount = :amount, owner = :owner WHERE id = :id;");
+        $stmt->bindValue(':id', $item->getId(), PDO::PARAM_INT);
+        $stmt->bindValue(':name', $item->getName(), PDO::PARAM_STR);
+        $stmt->bindValue(':semesters', $item->getSemesters(), PDO::PARAM_INT);
         $stmt->execute();
     }
 
     public function delete(int $id): void {
-        $stmt = $this->connection->prepare("DELETE FROM member WHERE id = :id;");
+        $stmt = $this->connection->prepare("DELETE FROM item WHERE id = :id;");
         $stmt->bindValue(':id', $id, PDO::PARAM_INT);
         $stmt->execute();
     }

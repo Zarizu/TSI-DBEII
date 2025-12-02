@@ -71,6 +71,46 @@ class MemberRepository {
         return $member;
     }
 
+    public function findByRole(int $roleID): ?Member {
+        $stmt = $this->connection->prepare("SELECT * FROM members WHERE role = :role");
+        $stmt->bindValue(':role', $roleID, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $row = $stmt->fetch();
+        if (!$row) return null;
+
+        $member = new Member(
+            id: $row['id'],
+            name: $row['name'],
+            role: $row['role'],
+            gold: $row['gold'],
+            team: $row['team'],
+        );
+
+        return $member;
+    }
+
+    public function findByTeam(int $teamID): ?Member {
+        $stmt = $this->connection->prepare("SELECT * FROM members WHERE team = :team");
+        $stmt->bindValue(':team', $teamID, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $row = $stmt->fetch();
+        if (!$row) return null;
+
+        $member = new Member(
+            id: $row['id'],
+            name: $row['name'],
+            role: $row['role'],
+            gold: $row['gold'],
+            team: $row['team'],
+        );
+
+        return $member;
+    }
+
+    
+
     public function create(Member $member): Member {
         $stmt = $this->connection->prepare("INSERT INTO members (name, role, gold, team) VALUES (:name, :role, :gold, :team)");
         $stmt->bindValue(':name', $member->getName());
