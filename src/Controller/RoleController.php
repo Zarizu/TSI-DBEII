@@ -1,47 +1,80 @@
 <?php
 
-namespace Model;
+namespace Controller;
 
-use JsonSerializable;
+use Service\RoleService;
+use Error\APIException;
 
-class Role implements JsonSerializable {
-    //implementando essa interface, a função json_enconde() terá acesso
-    //aos membros privados do objeto através do método jsonSerialize().
- 
-    private ?int $id;
-    private string $name;
+class RoleController {
+    private RoleService $roleService;
 
-    //construtor
-    public function __construct(
-        string $name,
-        ?int $id = null
-    ) {
-        $this->id = $id;
-        $this->name = trim($name);
+    public function __construct() {
+        $this->roleService = new RoleService();
     }
 
-    public function getId(): int {
-        return $this->id;
+    // GET /roles
+    public function getAllRoles(?string $name = null) {
+        try {
+            $roles = $this->roleService->getAllRoles($name);
+            echo json_encode($roles);
+        } catch (APIException $e) {
+            http_response_code($e->getCode());
+            echo json_encode(['error' => $e->getMessage()]);
+        }
     }
 
-    public function getName(): string {
-        return $this->name;
+    // GET /roles/{id}
+    public function getRoleById(int $id) {
+        try {
+            $role = $this->roleService->getRoleById($id);
+            echo json_encode($role);
+        } catch (APIException $e) {
+            http_response_code($e->getCode());
+            echo json_encode(['error' => $e->getMessage()]);
+        }
     }
 
-    public function setId(int $id) { 
-        //repare que id só admite nulo no processo de criação, aqui não!
-        $this->id = $id;
+    // POST /roles
+    public function createRole(string $name) {
+        try {
+            $role = $this->roleService->createRole($name);
+            echo json_encode($role);
+        } catch (APIException $e) {
+            http_response_code($e->getCode());
+            echo json_encode(['error' => $e->getMessage()]);
+        }
     }
 
-    public function setName(string $name) {
-        $this->name = trim($name);
+    // PUT /roles/{id}
+    public function updateRole(int $id, string $name) {
+        try {
+            $role = $this->roleService->updateRole($id, $name);
+            echo json_encode($role);
+        } catch (APIException $e) {
+            http_response_code($e->getCode());
+            echo json_encode(['error' => $e->getMessage()]);
+        }
     }
 
-    //a interface JsonSerializable exige a implementação desse método
-    //basicamene ele retorna todas (mas poderáimos customizar) os atributos do curso,
-    //agora com acesso público, de forma que a função json_encode() possa acessá-los
-    public function jsonSerialize(): array {
-        $vars = get_object_vars($this);
-        return $vars;
+    // DELETE /roles/{id}
+    public function deleteRole(int $id) {
+        try {
+            $this->roleService->deleteRole($id);
+            echo json_encode(['message' => 'Role deletada com sucesso']);
+        } catch (APIException $e) {
+            http_response_code($e->getCode());
+            echo json_encode(['error' => $e->getMessage()]);
+        }
+    }
+
+    // GET /roles/{id}/members
+    public function getMembersByRole(int $roleId) {
+        try {
+            $members = $this->roleService->getMembersByRole($roleId);
+            echo json_encode($members);
+        } catch (APIException $e) {
+            http_response_code($e->getCode());
+            echo json_encode(['error' => $e->getMessage()]);
+        }
     }
 }

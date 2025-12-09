@@ -1,79 +1,104 @@
 <?php
 
-namespace Model;
+namespace Controller;
 
-use JsonSerializable;
+use Service\ItemService;
+use Error\APIException;
 
-class Member implements JsonSerializable {
-    //implementando essa interface, a função json_enconde() terá acesso
-    //aos membros privados do objeto através do método jsonSerialize().
- 
-    private ?int $id;
-    private string $name;
-    private int $amount;
-    private int $owner;
+class ItemController {
+    private ItemService $itemService;
 
-    //construtor
-    public function __construct(
-        string $name,
-        float $gold, 
-        int $amount, 
-        int $owner, 
-        ?int $id = null
-    ) {
-        $this->id = $id;
-        $this->name = trim($name);
-        $this->gold = $gold;
-        $this->amount = $amount;
-        $this->owner = $owner;
+    public function __construct() {
+        $this->itemService = new ItemService();
     }
 
-    public function getId(): int {
-        return $this->id;
+    // GET /items
+    public function getAllItems(?string $name = null) {
+        try {
+            $items = $this->itemService->getAllItems($name);
+            echo json_encode($items);
+        } catch (APIException $e) {
+            http_response_code($e->getCode());
+            echo json_encode(['error' => $e->getMessage()]);
+        }
     }
 
-    public function getName(): string {
-        return $this->name;
+    // GET /items/{id}
+    public function getItemById(int $id) {
+        try {
+            $item = $this->itemService->getItemById($id);
+            echo json_encode($item);
+        } catch (APIException $e) {
+            http_response_code($e->getCode());
+            echo json_encode(['error' => $e->getMessage()]);
+        }
     }
 
-    public function getGold(): int {
-        return $this->gold;
+    // POST /items
+    public function createItem(string $name, int $amount, int $owner) {
+        try {
+            $item = $this->itemService->createItem($name, $amount, $owner);
+            echo json_encode($item);
+        } catch (APIException $e) {
+            http_response_code($e->getCode());
+            echo json_encode(['error' => $e->getMessage()]);
+        }
     }
 
-    public function getAmount(): int {
-        return $this->amount;
+    // PUT /items/{id}
+    public function updateItem(int $id, string $name, int $amount, int $owner) {
+        try {
+            $item = $this->itemService->updateItem($id, $name, $amount, $owner);
+            echo json_encode($item);
+        } catch (APIException $e) {
+            http_response_code($e->getCode());
+            echo json_encode(['error' => $e->getMessage()]);
+        }
     }
 
-    public function getOwner(): int {
-        return $this->owner;
+    // DELETE /items/{id}
+    public function deleteItem(int $id) {
+        try {
+            $this->itemService->deleteItem($id);
+            echo json_encode(['message' => 'Item deletado com sucesso']);
+        } catch (APIException $e) {
+            http_response_code($e->getCode());
+            echo json_encode(['error' => $e->getMessage()]);
+        }
     }
 
-    public function setId(int $id) { 
-        //repare que id só admite nulo no processo de criação, aqui não!
-        $this->id = $id;
+    // GET /items/owner/{ownerId}
+    public function getItemsByOwner(int $ownerId) {
+        try {
+            $items = $this->itemService->getItemsByOwner($ownerId);
+            echo json_encode($items);
+        } catch (APIException $e) {
+            http_response_code($e->getCode());
+            echo json_encode(['error' => $e->getMessage()]);
+        }
     }
 
-    public function setName(string $name) {
-        $this->name = trim($name);
+    // PATCH /items/:id/amount
+    public function updateAmount(int $itemId, int $amount) {
+        try {
+            $item = $this->itemService->updateAmount($itemId, $amount);
+            echo json_encode($item);
+        } catch (APIException $e) {
+            http_response_code($e->getCode());
+            echo json_encode(['error' => $e->getMessage()]);
+        }
     }
 
-    public function setGold(int $gold) {
-        $this->gold = $gold;
+    // PATCH /items/:member_id/transfer
+    public function transferItem(int $itemId, int $newOwnerId) {
+        try {
+            $item = $this->itemService->transferItem($itemId, $newOwnerId);
+            echo json_encode($item);
+        } catch (APIException $e) {
+            http_response_code($e->getCode());
+            echo json_encode(['error' => $e->getMessage()]);
+        }
     }
 
-    public function setAmount(int $amount) {
-        $this->amount = $amount;
-    }
 
-    public function setOwner(int $owner) {
-        $this->owner = $owner;
-    }
-
-    //a interface JsonSerializable exige a implementação desse método
-    //basicamene ele retorna todas (mas poderáimos customizar) os atributos do curso,
-    //agora com acesso público, de forma que a função json_encode() possa acessá-los
-    public function jsonSerialize(): array {
-        $vars = get_object_vars($this);
-        return $vars;
-    }
 }
