@@ -1,80 +1,59 @@
 <?php
 
-namespace Model;
+namespace Controller;
 
-use JsonSerializable;
+use Service\MemberService;
+use Error\APIException;
 
-class Member implements JsonSerializable {
-    //implementando essa interface, a função json_enconde() terá acesso
-    //aos membros privados do objeto através do método jsonSerialize().
- 
-    private ?int $id;
-    private string $name;
-    private float $gold;
-    private int $role;
-    private int $team;
+class MemberController {
+    private MemberService $service;
 
-    //construtor
-    public function __construct(
-        string $name,
-        float $gold, 
-        int $role, 
-        int $team, 
-        ?int $id = null
-    ) {
-        $this->id = $id;
-        $this->name = trim($name);
-        $this->gold = $gold;
-        $this->role = $role;
-        $this->team = $team;
+    public function __construct() {
+        $this->service = new MemberService();
     }
 
-    public function getId(): int {
-        return $this->id;
+    // GET /members
+    public function getAll() {
+        try {
+            $members = $this->service->getAllMembers();
+            echo json_encode($members);
+        } catch (APIException $e) {
+            http_response_code($e->getCode());
+            echo json_encode(['error' => $e->getMessage()]);
+        }
     }
 
-    public function getName(): string {
-        return $this->name;
+    // GET /members/{id}
+    public function getById(int $id) {
+        try {
+            $member = $this->service->getMemberById($id);
+            echo json_encode($member);
+        } catch (APIException $e) {
+            http_response_code($e->getCode());
+            echo json_encode(['error' => $e->getMessage()]);
+        }
     }
 
-    public function getGold(): int {
-        return $this->gold;
+    // GET /members/:id/inventory
+    public function getInventory(int $memberId) {
+        try {
+            $items = $this->memberService->getInventory($memberId);
+            echo json_encode($items);
+        } catch (APIException $e) {
+            http_response_code($e->getCode());
+            echo json_encode(['error' => $e->getMessage()]);
+        }
     }
 
-    public function getrole(): int {
-        return $this->role;
+    // PATCH /members/:id/gold
+    public function updateGold(int $memberId, int $addAmount) {
+        try {
+            $member = $this->memberService->updateGold($memberId, $addAmount);
+            echo json_encode($member);
+        } catch (APIException $e) {
+            http_response_code($e->getCode());
+            echo json_encode(['error' => $e->getMessage()]);
+        }
     }
 
-    public function getTeam(): int {
-        return $this->team;
-    }
-
-    public function setId(int $id) { 
-        //repare que id só admite nulo no processo de criação, aqui não!
-        $this->id = $id;
-    }
-
-    public function setName(string $name) {
-        $this->name = trim($name);
-    }
-
-    public function setGold(int $gold) {
-        $this->gold = $gold;
-    }
-
-    public function setrole(int $role) {
-        $this->role = $role;
-    }
-
-    public function setTeam(int $role) {
-        $this->role = $role;
-    }
-
-    //a interface JsonSerializable exige a implementação desse método
-    //basicamene ele retorna todas (mas poderáimos customizar) os atributos do curso,
-    //agora com acesso público, de forma que a função json_encode() possa acessá-los
-    public function jsonSerialize(): array {
-        $vars = get_object_vars($this);
-        return $vars;
-    }
 }

@@ -1,73 +1,92 @@
 <?php
 
-namespace Model;
+namespace Controller;
 
-use JsonSerializable;
+use Service\MissionService;
+use Error\APIException;
 
-class Mission implements JsonSerializable {
-    //implementando essa interface, a função json_enconde() terá acesso
-    //aos membros privados do objeto através do método jsonSerialize().
- 
-    private ?int $id;
-    private string $name;
-    private string $description;
-    private float $reward;
+class MissionController {
+    private MissionService $missionService;
 
-    //construtor
-    public function __construct(
-        string $name,
-        float $reward, 
-        int $description,
-        ?int $id = null
-    ) {
-        $this->id = $id;
-        $this->name = trim($name);
-        $this->reward = $reward;
-        $this->description = $description;
+    public function __construct() {
+        $this->missionService = new MissionService();
     }
 
-    public function getId(): int {
-        return $this->id;
+    // GET /missions
+    public function getAllMissions(?string $name = null) {
+        try {
+            $missions = $this->missionService->getAllMissions($name);
+            echo json_encode($missions);
+        } catch (APIException $e) {
+            http_response_code($e->getCode());
+            echo json_encode(['error' => $e->getMessage()]);
+        }
     }
 
-    public function getName(): string {
-        return $this->name;
+    // GET /missions/{id}
+    public function getMissionById(int $id) {
+        try {
+            $mission = $this->missionService->getMissionById($id);
+            echo json_encode($mission);
+        } catch (APIException $e) {
+            http_response_code($e->getCode());
+            echo json_encode(['error' => $e->getMessage()]);
+        }
     }
 
-    public function getReward(): int {
-        return $this->reward;
+    // POST /missions
+    public function createMission(string $name, string $description, float $reward) {
+        try {
+            $mission = $this->missionService->createMission($name, $description, $reward);
+            echo json_encode($mission);
+        } catch (APIException $e) {
+            http_response_code($e->getCode());
+            echo json_encode(['error' => $e->getMessage()]);
+        }
     }
 
-    public function getDescription(): int {
-        return $this->description;
+    // PUT /missions/{id}
+    public function updateMission(int $id, string $name, string $description, float $reward) {
+        try {
+            $mission = $this->missionService->updateMission($id, $name, $description, $reward);
+            echo json_encode($mission);
+        } catch (APIException $e) {
+            http_response_code($e->getCode());
+            echo json_encode(['error' => $e->getMessage()]);
+        }
     }
 
-    public function getTeam(): int {
-        return $this->team;
+    // DELETE /missions/{id}
+    public function deleteMission(int $id) {
+        try {
+            $this->missionService->deleteMission($id);
+            echo json_encode(['message' => 'Mission deletada com sucesso']);
+        } catch (APIException $e) {
+            http_response_code($e->getCode());
+            echo json_encode(['error' => $e->getMessage()]);
+        }
     }
 
-    public function setId(int $id) { 
-        //repare que id só admite nulo no processo de criação, aqui não!
-        $this->id = $id;
+    // GET /missions/{id}/teams
+    public function getTeamsByMission(int $missionId) {
+        try {
+            $teams = $this->missionService->getTeamsByMission($missionId);
+            echo json_encode($teams);
+        } catch (APIException $e) {
+            http_response_code($e->getCode());
+            echo json_encode(['error' => $e->getMessage()]);
+        }
     }
 
-    public function setName(string $name) {
-        $this->name = trim($name);
+    // PATCH /missions/:id/reward
+    public function updateReward(int $missionId, float $reward) {
+        try {
+            $mission = $this->missionService->updateReward($missionId, $reward);
+            echo json_encode($mission);
+        } catch (APIException $e) {
+            http_response_code($e->getCode());
+            echo json_encode(['error' => $e->getMessage()]);
+        }
     }
 
-    public function setReward(int $reward) {
-        $this->reward = $reward;
-    }
-
-    public function setDescription(int $description) {
-        $this->description = $description;
-    }
-
-    //a interface JsonSerializable exige a implementação desse método
-    //basicamene ele retorna todas (mas poderáimos customizar) os atributos do curso,
-    //agora com acesso público, de forma que a função json_encode() possa acessá-los
-    public function jsonSerialize(): array {
-        $vars = get_object_vars($this);
-        return $vars;
-    }
 }

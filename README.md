@@ -43,14 +43,14 @@ Este é um exemplo de uso do padrão Contoller-Service-Repository para a constru
 - Nos arquivos test_courses.http e test_students.http há exemplos requisições para testar as rotas e regras de negócio.
 
 ### Endpoint
-- CLASSES
-- POST /classes
+- ROLES
+- POST /roles
 - body: { "name": "Guerreiro" }
-- GET /classes?name=Guerreiro (query opicional)
-- GET /classes/:id
-- PUT /classes/:id
+- GET /roles?name=Guerreiro (query opicional)
+- GET /roles/:id
+- PUT /roles/:id
 - body: { "name": "Mago" }
-- DELETE /classes/:id
+- DELETE /roles/:id
 - MEMBERS
 - POST /members
 - body: { "name": "Tchurus Bangos","class_id": 4,"team_id": 2 }
