@@ -1,79 +1,98 @@
 <?php
 
-namespace Model;
+namespace Service;
 
-use JsonSerializable;
+use Error\APIException;
+use Model\Member;
+use Repository\RoleRepository;
+use Repository\TeamRepository;
+use Repository\MemberRepository;
 
-class Member implements JsonSerializable {
-    //implementando essa interface, a função json_enconde() terá acesso
-    //aos membros privados do objeto através do método jsonSerialize().
- 
-    private ?int $id;
-    private string $name;
-    private int $amount;
-    private int $owner;
+class MemberService {
+    private MemberRepository $repository;
+    private RoleRepository $roleRepository;
+    private TeamRepository $teamRepository;
 
-    //construtor
-    public function __construct(
+    public function __construct() {
+        $this->repository = new MemberRepository();
+        $this->roleRepository = new RoleRepository();
+        $this->teamRepository = new TeamRepository();
+    }
+
+    public function getMembers(?string $name): array {
+        if ($name) return $this->repository->findByName($name);
+
+        return $this->repository->findAll();
+    }
+
+    public function getMemberById(string $id): Member {
+        $member = $this->repository->findById((int)$id);
+
+        if (!$member) throw new APIException("Member not found!", 404);
+
+        return $member;
+    }
+
+    public function createNewMember(
         string $name,
-        float $gold, 
-        int $amount, 
-        int $owner, 
-        ?int $id = null
-    ) {
-        $this->id = $id;
-        $this->name = trim($name);
-        $this->gold = $gold;
-        $this->amount = $amount;
-        $this->owner = $owner;
+        int $roleId,
+        float $gold,
+        int $teamId
+    ): Member {
+
+        $member = new Member(
+            name: $name,
+            role: $roleId,
+            gold: $gold,
+            team: $teamId
+        );
+
+        $this->validateMember($member);
+
+        return $this->repository->create($member);
     }
 
-    public function getId(): int {
-        return $this->id;
+    public function updateMember(
+        string $id,
+        string $name,
+        int $roleId,
+        float $gold,
+        int $teamId
+    ): Member {
+
+        $member = $this->getMemberById($id);
+
+        $member->setName($name);
+        $member->setRole($roleId);
+        $member->setGold($gold);
+        $member->setTeam($teamId);
+
+        $this->validateMember($member);
+
+        $this->repository->update($member);
+
+        return $member;
     }
 
-    public function getName(): string {
-        return $this->name;
+    public function deleteMember(string $id): void {
+        $member = $this->getMemberById($id);
+        $this->repository->delete((int)$id);
     }
 
-    public function getGold(): int {
-        return $this->gold;
-    }
+    private function validateMember(Member $member): void {
+        if (strlen(trim($member->getName())) < 2)
+            throw new APIException("Invalid member name!", 400);
 
-    public function getAmount(): int {
-        return $this->amount;
-    }
+        // validar existência da role
+        $roleId = $member->getRole();
+        $role = $this->roleRepository->findById($roleId);
+        if (!$role)
+            throw new APIException("Role not found!", 404);
 
-    public function getOwner(): int {
-        return $this->owner;
-    }
-
-    public function setId(int $id) { 
-        //repare que id só admite nulo no processo de criação, aqui não!
-        $this->id = $id;
-    }
-
-    public function setName(string $name) {
-        $this->name = trim($name);
-    }
-
-    public function setGold(int $gold) {
-        $this->gold = $gold;
-    }
-
-    public function setAmount(int $amount) {
-        $this->amount = $amount;
-    }
-
-    public function setOwner(int $owner) {
-        $this->owner = $owner;
-    }
-
-    //a interface JsonSerializable exige a implementação desse método
-    //basicamene ele retorna todas (mas poderáimos customizar) os atributos do curso,
-    //agora com acesso público, de forma que a função json_encode() possa acessá-los
-    public function jsonSerialize(): array {
-        $vars = get_object_vars($this);
-        return $vars;
+        // validar existência da team
+        $teamId = $member->getTeam();
+        $team = $this->teamRepository->findById($teamId);
+        if (!$team)
+            throw new APIException("Team not found!", 404);
     }
 }

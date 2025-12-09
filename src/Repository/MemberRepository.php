@@ -3,74 +3,52 @@
 namespace Repository;
 
 use Database\Database;
-use Model\Member;
+use Model\Mission;
 use PDO;
 
-class MemberRepository {
-    private $connection;
+class MissionRepository {
+    private PDO $connection;
+    private TeamMissionRepository $teamMissionRepository;
 
     public function __construct() {
         $this->connection = Database::getConnection();
+        $this->teamMissionRepository = new TeamMissionRepository();
     }
 
     public function findAll(): array {
-        $stmt = $this->connection->prepare("SELECT * FROM members");
+        $stmt = $this->connection->prepare("SELECT * FROM missions");
         $stmt->execute();
 
-        $members = [];
-        while ($row = $stmt->fetch()) {
-            $member = new Member(
+        $missions = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $missions[] = new Mission(
                 id: $row['id'],
                 name: $row['name'],
-                role: $row['role'],
-                gold: $row['gold'],
-                team: $row['team'],
+                description: $row['description'],
+                reward: $row['reward']
             );
-            $members[] = $member;
         }
 
-        return $members;
+        return $missions;
     }
 
-    public function findByName(string $name): array {
-        $stmt = $this->connection->prepare("SELECT * FROM courses WHERE name like :name");
-        $stmt->bindValue(':name', '%' . $name . '%');
-        $stmt->execute();
-
-        $members = [];
-        while ($row = $stmt->fetch()) {
-            $member = new Member(
-                id: $row['id'],
-                name: $row['name'],
-                role: $row['role'],
-                gold: $row['gold'],
-                team: $row['team'],
-            );
-            $members[] = $member;
-        }
-
-        return $members;
-    }
-
-    public function findById(int $id): ?Member {
-        $stmt = $this->connection->prepare("SELECT * FROM members WHERE id = :id");
+    public function findById(int $id): ?Mission {
+        $stmt = $this->connection->prepare("SELECT * FROM missions WHERE id = :id");
         $stmt->bindValue(':id', $id, PDO::PARAM_INT);
         $stmt->execute();
 
-        $row = $stmt->fetch();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$row) return null;
 
-        $member = new Member(
+        return new Mission(
             id: $row['id'],
             name: $row['name'],
-            role: $row['role'],
-            gold: $row['gold'],
-            team: $row['team'],
+            description: $row['description'],
+            reward: $row['reward']
         );
-
-        return $member;
     }
 
+<<<<<<< Updated upstream:src/Repository/MemberRepository.php
     public function findByRole(int $roleID): ?Member {
         $stmt = $this->connection->prepare("SELECT * FROM members WHERE role = :role");
         $stmt->bindValue(':role', $roleID, PDO::PARAM_INT);
@@ -117,13 +95,22 @@ class MemberRepository {
         $stmt->bindValue(':role', $member->getRole(), PDO::PARAM_INT);
         $stmt->bindValue(':gold', $member->getGold(), PDO::PARAM_FLOAT);
         $stmt->bindValue(':team', $member->getTeam(), PDO::PARAM_INT);
+=======
+    public function create(Mission $mission): Mission {
+        $stmt = $this->connection->prepare(
+            "INSERT INTO missions (name, description, reward) VALUES (:name, :description, :reward)"
+        );
+        $stmt->bindValue(':name', $mission->getName());
+        $stmt->bindValue(':description', $mission->getDescription());
+        $stmt->bindValue(':reward', $mission->getReward(), PDO::PARAM_INT);
+>>>>>>> Stashed changes:src/Repository/MissionRepositoty.php
         $stmt->execute();
 
-        $member->setId($this->connection->lastInsertId());
-
-        return $member;
+        $mission->setId($this->connection->lastInsertId());
+        return $mission;
     }
 
+<<<<<<< Updated upstream:src/Repository/MemberRepository.php
     public function update(Member $member): void {
         $stmt = $this->connection->prepare("UPDATE members SET name = :name, role = :role, gold = :gold, team = :team WHERE id = :id;");
         $stmt->bindValue(':id', $member->getId(), PDO::PARAM_INT);
@@ -138,12 +125,30 @@ class MemberRepository {
         $stmt = $this->connection->prepare("UPDATE members SET gold = :gold WHERE id = :id;");
         $stmt->bindValue(':id', $team->getId(), PDO::PARAM_INT);
         $stmt->bindValue(':gold', $team->getGold(), PDO::PARAM_FLOAT);
+=======
+    public function update(Mission $mission): void {
+        $stmt = $this->connection->prepare(
+            "UPDATE missions SET name = :name, description = :description, reward = :reward WHERE id = :id"
+        );
+        $stmt->bindValue(':id', $mission->getId(), PDO::PARAM_INT);
+        $stmt->bindValue(':name', $mission->getName());
+        $stmt->bindValue(':description', $mission->getDescription());
+        $stmt->bindValue(':reward', $mission->getReward(), PDO::PARAM_INT);
+>>>>>>> Stashed changes:src/Repository/MissionRepositoty.php
         $stmt->execute();
     }
 
     public function delete(int $id): void {
+<<<<<<< Updated upstream:src/Repository/MemberRepository.php
         $stmt = $this->connection->prepare("DELETE FROM members WHERE id = :id;");
+=======
+        $stmt = $this->connection->prepare("DELETE FROM missions WHERE id = :id");
+>>>>>>> Stashed changes:src/Repository/MissionRepositoty.php
         $stmt->bindValue(':id', $id, PDO::PARAM_INT);
         $stmt->execute();
+    }
+
+    public function getTeams(int $missionId): array {
+        return $this->teamMissionRepository->findTeamsByMissionId($missionId);
     }
 }
