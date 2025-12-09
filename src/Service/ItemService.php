@@ -83,4 +83,18 @@ class ItemService {
 
         return $this->itemRepository->findByOwner($ownerId);
     }
+
+    public function transferItem(int $itemId, int $newOwnerId): Item {
+        $item = $this->itemRepository->findById($itemId);
+        if (!$item) throw new APIException("Item não encontrado", 404);
+
+        $newOwner = $this->memberRepository->findById($newOwnerId);
+        if (!$newOwner) throw new APIException("Novo dono não encontrado", 404);
+
+        $item->setOwner($newOwnerId);
+
+        $this->itemRepository->update($item);
+
+        return $item;
+    }
 }
