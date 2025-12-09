@@ -4,95 +4,93 @@ namespace Service;
 
 use Error\APIException;
 use Model\Member;
+use Repository\MemberRepository;
 use Repository\RoleRepository;
 use Repository\TeamRepository;
-use Repository\MemberRepository;
 
 class MemberService {
-    private MemberRepository $repository;
+    private MemberRepository $memberRepository;
     private RoleRepository $roleRepository;
     private TeamRepository $teamRepository;
 
     public function __construct() {
-        $this->repository = new MemberRepository();
+        $this->memberRepository = new MemberRepository();
         $this->roleRepository = new RoleRepository();
         $this->teamRepository = new TeamRepository();
     }
 
-    public function getMembers(?string $name): array {
-        if ($name) return $this->repository->findByName($name);
+    public function createMember(string $name, int $roleId, int $teamId, float $gold): Member {
+        $name = trim($name);
+        if (strlen($name) < 3) {
+            throw new APIException("Nome do membro inválido", 400);
+        }
 
-        return $this->repository->findAll();
-    }
+        $role = $this->roleRepository->findById($roleId);
+        if (!$role) throw new APIException("Role não encontrada", 404);
 
-    public function getMemberById(string $id): Member {
-        $member = $this->repository->findById((int)$id);
+        $team = $this->teamRepository->findById($teamId);
+        if (!$team) throw new APIException("Team não encontrado", 404);
 
-        if (!$member) throw new APIException("Member not found!", 404);
-
-        return $member;
-    }
-
-    public function createNewMember(
-        string $name,
-        int $roleId,
-        float $gold,
-        int $teamId
-    ): Member {
+        if ($gold < 0) throw new APIException("Gold não pode ser negativo", 400);
 
         $member = new Member(
             name: $name,
             role: $roleId,
-            gold: $gold,
-            team: $teamId
+            team: $teamId,
+            gold: $gold
         );
 
-        $this->validateMember($member);
-
-        return $this->repository->create($member);
+        return $this->memberRepository->create($member);
     }
 
-    public function updateMember(
-        string $id,
-        string $name,
-        int $roleId,
-        float $gold,
-        int $teamId
-    ): Member {
+    public function getMemberById(int $id): Member {
+        $member = $this->memberRepository->findById($id);
+        if (!$member) throw new APIException("Member não encontrado", 404);
+        return $member;
+    }
 
+    public function getAllMembers(?string $name = null): array {
+        if ($name) {
+            return $this->memberRepository->findByName($name);
+        }
+        return $this->memberRepository->findAll();
+    }
+
+    public function updateMember(int $id, string $name, int $roleId, int $teamId, float $gold): Member {
         $member = $this->getMemberById($id);
+
+        $name = trim($name);
+        if (strlen($name) < 3) throw new APIException("Nome do membro inválido", 400);
+
+        $role = $this->roleRepository->findById($roleId);
+        if (!$role) throw new APIException("Role não encontrada", 404);
+
+        $team = $this->teamRepository->findById($teamId);
+        if (!$team) throw new APIException("Team não encontrado", 404);
+
+        if ($gold < 0) throw new APIException("Gold não pode ser negativo", 400);
 
         $member->setName($name);
         $member->setRole($roleId);
-        $member->setGold($gold);
         $member->setTeam($teamId);
+        $member->setGold($gold);
 
-        $this->validateMember($member);
-
-        $this->repository->update($member);
+        $this->memberRepository->update($member);
 
         return $member;
     }
 
-    public function deleteMember(string $id): void {
-        $member = $this->getMemberById($id);
-        $this->repository->delete((int)$id);
+    public function deleteMember(int $id): void {
+        $this->getMemberById($id);
+        $this->memberRepository->delete($id);
     }
 
-    private function validateMember(Member $member): void {
-        if (strlen(trim($member->getName())) < 2)
-            throw new APIException("Invalid member name!", 400);
 
-        // validar existência da role
-        $roleId = $member->getRole();
-        $role = $this->roleRepository->findById($roleId);
-        if (!$role)
-            throw new APIException("Role not found!", 404);
+    public function getMembersByRole(int $roleId): array {
+        return $this->memberRepository->findByRole($roleId);
+    }
 
-        // validar existência da team
-        $teamId = $member->getTeam();
-        $team = $this->teamRepository->findById($teamId);
-        if (!$team)
-            throw new APIException("Team not found!", 404);
+    public function getMembersByTeam(int $teamId): array {
+        return $this->memberRepository->findByTeam($teamId);
     }
 }

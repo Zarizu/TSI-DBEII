@@ -1,58 +1,51 @@
 <?php
 
-namespace Model;
+namespace Service;
 
-use JsonSerializable;
+use Error\APIException;
+use Model\Team;
+use Repository\TeamRepository;
+use Repository\MissionRepository;
+use Repository\TeamMissionRepository;
 
-class Team implements JsonSerializable {
-    //implementando essa interface, a função json_enconde() terá acesso
-    //aos membros privados do objeto através do método jsonSerialize().
- 
-    private ?int $id;
-    private string $name;
-    private float $gold;
+class TeamService {
+    private TeamRepository $teamRepository;
+    private MissionRepository $missionRepository;
+    private TeamMissionRepository $teamMissionRepository;
 
-    //construtor
-    public function __construct(
-        string $name,
-        float $gold,
-        ?int $id = null
-    ) {
-        $this->id = $id;
-        $this->name = trim($name);
-        $this->gold = $gold;
+    public function __construct() {
+        $this->teamRepository = new TeamRepository();
+        $this->missionRepository = new MissionRepository();
+        $this->teamMissionRepository = new TeamMissionRepository();
     }
 
-    public function getId(): int {
-        return $this->id;
+    public function createTeam(string $name, int $gold): Team {
+        if (strlen(trim($name)) < 3) {
+            throw new APIException("Nome do time inválido", 400);
+        }
+        if ($gold < 0) {
+            throw new APIException("Gold não pode ser negativo", 400);
+        }
+
+        $team = new Team(name: $name, gold: $gold);
+        return $this->teamRepository->create($team);
     }
 
-    public function getName(): string {
-        return $this->name;
+    public function assignTeamToMission(int $teamId, int $missionId): void {
+        $team = $this->teamRepository->findById($teamId);
+        if (!$team) throw new APIException("Time não encontrado", 404);
+
+        $mission = $this->missionRepository->findById($missionId);
+        if (!$mission) throw new APIException("Missão não encontrada", 404);
+
+        $this->teamMissionRepository->addTeamToMission($teamId, $missionId);
     }
 
-    public function getGold(): int {
-        return $this->gold;
+    public function removeTeamFromMission(int $teamId, int $missionId): void {
+        $this->teamMissionRepository->removeTeamFromMission($teamId, $missionId);
     }
 
-    public function setId(int $id) { 
-        //repare que id só admite nulo no processo de criação, aqui não!
-        $this->id = $id;
-    }
-
-    public function setName(string $name) {
-        $this->name = trim($name);
-    }
-
-    public function setGold(int $gold) {
-        $this->gold = $gold;
-    }
-
-    //a interface JsonSerializable exige a implementação desse método
-    //basicamene ele retorna todas (mas poderáimos customizar) os atributos do curso,
-    //agora com acesso público, de forma que a função json_encode() possa acessá-los
-    public function jsonSerialize(): array {
-        $vars = get_object_vars($this);
-        return $vars;
+    public function getTeamMissions(int $teamId): array {
+        return $this->teamRepository->getMissions($teamId);
     }
 }

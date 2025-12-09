@@ -3,96 +3,84 @@
 namespace Service;
 
 use Error\APIException;
-use Model\Member;
-use Repository\RoleRepository;
-use Repository\TeamRepository;
+use Model\Item;
+use Repository\ItemRepository;
 use Repository\MemberRepository;
 
-class MemberService {
-    private MemberRepository $repository;
-    private RoleRepository $roleRepository;
-    private TeamRepository $teamRepository;
+class ItemService {
+    private ItemRepository $itemRepository;
+    private MemberRepository $memberRepository;
 
     public function __construct() {
-        $this->repository = new MemberRepository();
-        $this->roleRepository = new RoleRepository();
-        $this->teamRepository = new TeamRepository();
+        $this->itemRepository = new ItemRepository();
+        $this->memberRepository = new MemberRepository();
     }
 
-    public function getMembers(?string $name): array {
-        if ($name) return $this->repository->findByName($name);
+    public function createItem(string $name, int $amount, int $ownerId): Item {
+        $name = trim($name);
+        if (strlen($name) < 2) {
+            throw new APIException("Nome do item inválido", 400);
+        }
 
-        return $this->repository->findAll();
-    }
+        if ($amount < 0) {
+            throw new APIException("Quantidade inválida", 400);
+        }
 
-    public function getMemberById(string $id): Member {
-        $member = $this->repository->findById((int)$id);
+        $owner = $this->memberRepository->findById($ownerId);
+        if (!$owner) {
+            throw new APIException("Owner (Member) não encontrado", 404);
+        }
 
-        if (!$member) throw new APIException("Member not found!", 404);
-
-        return $member;
-    }
-
-    public function createNewMember(
-        string $name,
-        int $roleId,
-        float $gold,
-        int $teamId
-    ): Member {
-
-        $member = new Member(
+        $item = new Item(
             name: $name,
-            role: $roleId,
-            gold: $gold,
-            team: $teamId
+            amount: $amount,
+            owner: $ownerId
         );
 
-        $this->validateMember($member);
-
-        return $this->repository->create($member);
+        return $this->itemRepository->create($item);
     }
 
-    public function updateMember(
-        string $id,
-        string $name,
-        int $roleId,
-        float $gold,
-        int $teamId
-    ): Member {
-
-        $member = $this->getMemberById($id);
-
-        $member->setName($name);
-        $member->setRole($roleId);
-        $member->setGold($gold);
-        $member->setTeam($teamId);
-
-        $this->validateMember($member);
-
-        $this->repository->update($member);
-
-        return $member;
+    public function getItemById(int $id): Item {
+        $item = $this->itemRepository->findById($id);
+        if (!$item) throw new APIException("Item não encontrado", 404);
+        return $item;
     }
 
-    public function deleteMember(string $id): void {
-        $member = $this->getMemberById($id);
-        $this->repository->delete((int)$id);
+    public function getAllItems(?string $name = null): array {
+        if ($name) {
+            return $this->itemRepository->findByName($name);
+        }
+        return $this->itemRepository->findAll();
     }
 
-    private function validateMember(Member $member): void {
-        if (strlen(trim($member->getName())) < 2)
-            throw new APIException("Invalid member name!", 400);
+    public function updateItem(int $id, string $name, int $amount, int $ownerId): Item {
+        $item = $this->getItemById($id);
 
-        // validar existência da role
-        $roleId = $member->getRole();
-        $role = $this->roleRepository->findById($roleId);
-        if (!$role)
-            throw new APIException("Role not found!", 404);
+        $name = trim($name);
+        if (strlen($name) < 2) throw new APIException("Nome do item inválido", 400);
+        if ($amount < 0) throw new APIException("Quantidade inválida", 400);
 
-        // validar existência da team
-        $teamId = $member->getTeam();
-        $team = $this->teamRepository->findById($teamId);
-        if (!$team)
-            throw new APIException("Team not found!", 404);
+        $owner = $this->memberRepository->findById($ownerId);
+        if (!$owner) throw new APIException("Owner (Member) não encontrado", 404);
+
+        $item->setName($name);
+        $item->setAmount($amount);
+        $item->setOwner($ownerId);
+
+        $this->itemRepository->update($item);
+
+        return $item;
+    }
+
+    public function deleteItem(int $id): void {
+        $this->getItemById($id);
+        $this->itemRepository->delete($id);
+    }
+
+    public function getItemsByOwner(int $ownerId): array {
+        $owner = $this->memberRepository->findById($ownerId);
+        if (!$owner) throw new APIException("Owner (Member) não encontrado", 404);
+
+        return $this->itemRepository->findByOwner($ownerId);
     }
 }
