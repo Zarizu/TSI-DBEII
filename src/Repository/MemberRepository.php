@@ -48,7 +48,6 @@ class MissionRepository {
         );
     }
 
-<<<<<<< Updated upstream:src/Repository/MemberRepository.php
     public function findByRole(int $roleID): ?Member {
         $stmt = $this->connection->prepare("SELECT * FROM members WHERE role = :role");
         $stmt->bindValue(':role', $roleID, PDO::PARAM_INT);
@@ -95,22 +94,12 @@ class MissionRepository {
         $stmt->bindValue(':role', $member->getRole(), PDO::PARAM_INT);
         $stmt->bindValue(':gold', $member->getGold(), PDO::PARAM_FLOAT);
         $stmt->bindValue(':team', $member->getTeam(), PDO::PARAM_INT);
-=======
-    public function create(Mission $mission): Mission {
-        $stmt = $this->connection->prepare(
-            "INSERT INTO missions (name, description, reward) VALUES (:name, :description, :reward)"
-        );
-        $stmt->bindValue(':name', $mission->getName());
-        $stmt->bindValue(':description', $mission->getDescription());
-        $stmt->bindValue(':reward', $mission->getReward(), PDO::PARAM_INT);
->>>>>>> Stashed changes:src/Repository/MissionRepositoty.php
         $stmt->execute();
 
         $mission->setId($this->connection->lastInsertId());
         return $mission;
     }
 
-<<<<<<< Updated upstream:src/Repository/MemberRepository.php
     public function update(Member $member): void {
         $stmt = $this->connection->prepare("UPDATE members SET name = :name, role = :role, gold = :gold, team = :team WHERE id = :id;");
         $stmt->bindValue(':id', $member->getId(), PDO::PARAM_INT);
@@ -125,25 +114,11 @@ class MissionRepository {
         $stmt = $this->connection->prepare("UPDATE members SET gold = :gold WHERE id = :id;");
         $stmt->bindValue(':id', $team->getId(), PDO::PARAM_INT);
         $stmt->bindValue(':gold', $team->getGold(), PDO::PARAM_FLOAT);
-=======
-    public function update(Mission $mission): void {
-        $stmt = $this->connection->prepare(
-            "UPDATE missions SET name = :name, description = :description, reward = :reward WHERE id = :id"
-        );
-        $stmt->bindValue(':id', $mission->getId(), PDO::PARAM_INT);
-        $stmt->bindValue(':name', $mission->getName());
-        $stmt->bindValue(':description', $mission->getDescription());
-        $stmt->bindValue(':reward', $mission->getReward(), PDO::PARAM_INT);
->>>>>>> Stashed changes:src/Repository/MissionRepositoty.php
         $stmt->execute();
     }
 
     public function delete(int $id): void {
-<<<<<<< Updated upstream:src/Repository/MemberRepository.php
         $stmt = $this->connection->prepare("DELETE FROM members WHERE id = :id;");
-=======
-        $stmt = $this->connection->prepare("DELETE FROM missions WHERE id = :id");
->>>>>>> Stashed changes:src/Repository/MissionRepositoty.php
         $stmt->bindValue(':id', $id, PDO::PARAM_INT);
         $stmt->execute();
     }
