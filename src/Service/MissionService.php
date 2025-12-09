@@ -1,73 +1,33 @@
 <?php
 
-namespace Model;
+namespace Service;
 
-use JsonSerializable;
+use Error\APIException;
+use Model\Mission;
+use Repository\MissionRepository;
+use Repository\TeamRepository;
+use Repository\TeamMissionRepository;
 
-class Mission implements JsonSerializable {
-    //implementando essa interface, a função json_enconde() terá acesso
-    //aos membros privados do objeto através do método jsonSerialize().
- 
-    private ?int $id;
-    private string $name;
-    private string $description;
-    private float $reward;
+class MissionService {
+    private MissionRepository $missionRepository;
+    private TeamRepository $teamRepository;
+    private TeamMissionRepository $teamMissionRepository;
 
-    //construtor
-    public function __construct(
-        string $name,
-        float $reward, 
-        int $description,
-        ?int $id = null
-    ) {
-        $this->id = $id;
-        $this->name = trim($name);
-        $this->reward = $reward;
-        $this->description = $description;
+    public function __construct() {
+        $this->missionRepository = new MissionRepository();
+        $this->teamRepository = new TeamRepository();
+        $this->teamMissionRepository = new TeamMissionRepository();
     }
 
-    public function getId(): int {
-        return $this->id;
+    public function createMission(string $name, string $description, int $reward): Mission {
+        if (strlen(trim($name)) < 3) throw new APIException("Nome da missão inválido", 400);
+        if ($reward < 0) throw new APIException("Recompensa inválida", 400);
+
+        $mission = new Mission(name: $name, description: $description, reward: $reward);
+        return $this->missionRepository->create($mission);
     }
 
-    public function getName(): string {
-        return $this->name;
-    }
-
-    public function getReward(): int {
-        return $this->reward;
-    }
-
-    public function getDescription(): int {
-        return $this->description;
-    }
-
-    public function getTeam(): int {
-        return $this->team;
-    }
-
-    public function setId(int $id) { 
-        //repare que id só admite nulo no processo de criação, aqui não!
-        $this->id = $id;
-    }
-
-    public function setName(string $name) {
-        $this->name = trim($name);
-    }
-
-    public function setReward(int $reward) {
-        $this->reward = $reward;
-    }
-
-    public function setDescription(int $description) {
-        $this->description = $description;
-    }
-
-    //a interface JsonSerializable exige a implementação desse método
-    //basicamene ele retorna todas (mas poderáimos customizar) os atributos do curso,
-    //agora com acesso público, de forma que a função json_encode() possa acessá-los
-    public function jsonSerialize(): array {
-        $vars = get_object_vars($this);
-        return $vars;
+    public function getMissionTeams(int $missionId): array {
+        return $this->missionRepository->getTeams($missionId);
     }
 }

@@ -1,47 +1,63 @@
 <?php
 
-namespace Model;
+namespace Service;
 
-use JsonSerializable;
+use Error\APIException;
+use Model\Role;
+use Repository\RoleRepository;
 
-class Role implements JsonSerializable {
-    //implementando essa interface, a função json_enconde() terá acesso
-    //aos membros privados do objeto através do método jsonSerialize().
- 
-    private ?int $id;
-    private string $name;
+class RoleService {
+    private RoleRepository $roleRepository;
 
-    //construtor
-    public function __construct(
-        string $name,
-        ?int $id = null
-    ) {
-        $this->id = $id;
-        $this->name = trim($name);
+    public function __construct() {
+        $this->roleRepository = new RoleRepository();
     }
 
-    public function getId(): int {
-        return $this->id;
+    public function createRole(string $name): Role {
+        $name = trim($name);
+        if (strlen($name) < 2) {
+            throw new APIException("Nome da role inválido", 400);
+        }
+
+        // Verifica se já existe
+        $existingRoles = $this->roleRepository->findByName($name);
+        if (count($existingRoles) > 0) {
+            throw new APIException("Role já existe", 400);
+        }
+
+        $role = new Role(name: $name);
+        return $this->roleRepository->create($role);
     }
 
-    public function getName(): string {
-        return $this->name;
+    public function getRoleById(int $id): Role {
+        $role = $this->roleRepository->findById($id);
+        if (!$role) {
+            throw new APIException("Role não encontrada", 404);
+        }
+        return $role;
     }
 
-    public function setId(int $id) { 
-        //repare que id só admite nulo no processo de criação, aqui não!
-        $this->id = $id;
+    public function getAllRoles(): array {
+        return $this->roleRepository->findAll();
     }
 
-    public function setName(string $name) {
-        $this->name = trim($name);
+    public function updateRole(int $id, string $name): Role {
+        $role = $this->getRoleById($id);
+
+        $name = trim($name);
+        if (strlen($name) < 2) {
+            throw new APIException("Nome da role inválido", 400);
+        }
+
+        $role->setName($name);
+        $this->roleRepository->update($role);
+
+        return $role;
     }
 
-    //a interface JsonSerializable exige a implementação desse método
-    //basicamene ele retorna todas (mas poderáimos customizar) os atributos do curso,
-    //agora com acesso público, de forma que a função json_encode() possa acessá-los
-    public function jsonSerialize(): array {
-        $vars = get_object_vars($this);
-        return $vars;
+    public function deleteRole(int $id): void {
+        $role = $this->getRoleById($id);
+        $this->roleRepository->delete($id);
     }
+
 }
